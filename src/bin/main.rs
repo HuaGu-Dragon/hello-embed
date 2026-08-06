@@ -12,6 +12,7 @@ use defmt::info;
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
+use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::timer::timg::TimerGroup;
 use esp_radio::ble::controller::BleConnector;
 use panic_rtt_target as _;
@@ -40,6 +41,8 @@ async fn main(spawner: Spawner) -> ! {
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
 
+    let mut led = Output::new(peripherals.GPIO38, Level::Low, OutputConfig::default());
+
     esp_alloc::heap_allocator!(#[esp_hal::ram(reclaimed)] size: 73744);
     // COEX needs more RAM - so we've added some more
     esp_alloc::heap_allocator!(size: 64 * 1024);
@@ -67,6 +70,9 @@ async fn main(spawner: Spawner) -> ! {
     loop {
         info!("Hello world!");
         Timer::after(Duration::from_secs(1)).await;
+        led.set_high();
+        Timer::after(Duration::from_secs(1)).await;
+        led.set_low();
     }
 
     // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.1.0/examples
