@@ -15,7 +15,7 @@ use esp_hal::clock::CpuClock;
 use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::timer::timg::TimerGroup;
 use esp_radio::ble::controller::BleConnector;
-use hello_embed::lcd::Lcd;
+use hello_embed::lcd::{Lcd, Rect};
 use panic_rtt_target as _;
 use trouble_host::prelude::*;
 
@@ -46,7 +46,7 @@ async fn main(spawner: Spawner) -> ! {
 
     esp_alloc::heap_allocator!(#[esp_hal::ram(reclaimed)] size: 73744);
     // COEX needs more RAM - so we've added some more
-    esp_alloc::heap_allocator!(size: 64 * 1024);
+    esp_alloc::heap_allocator!(size: 128 * 1024);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     let sw_interrupt =
@@ -68,7 +68,7 @@ async fn main(spawner: Spawner) -> ! {
     // TODO: Spawn some tasks
     let _ = spawner;
 
-    let lcd = Lcd::init_spi2(
+    let mut lcd = Lcd::init_spi2(
         peripherals.SPI2,
         peripherals.GPIO11,
         peripherals.GPIO12,
@@ -83,8 +83,26 @@ async fn main(spawner: Spawner) -> ! {
     loop {
         info!("Hello world!");
         Timer::after(Duration::from_secs(1)).await;
+        lcd.draw(
+            Rect {
+                start_x: 0,
+                start_y: 0,
+                end_x: 100,
+                end_y: 100,
+            },
+            0xFFFF,
+        );
         led.set_high();
         Timer::after(Duration::from_secs(1)).await;
+        lcd.draw(
+            Rect {
+                start_x: 0,
+                start_y: 0,
+                end_x: 100,
+                end_y: 100,
+            },
+            0x0000,
+        );
         led.set_low();
     }
 
