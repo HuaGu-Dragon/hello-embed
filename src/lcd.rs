@@ -117,6 +117,7 @@ impl<'a> Lcd<'a> {
         ]);
 
         lcd.write_cmd(&[0x21, 0x29, 0x2C]);
+        lcd.clear(0x0000);
 
         lcd
     }
@@ -149,7 +150,7 @@ impl<'a> Lcd<'a> {
         self.write_cmd(&[0x2c]);
 
         let data = color.to_be_bytes();
-        let area = (rect.end_x - rect.start_x) * (rect.end_y - rect.start_y);
+        let area = (rect.end_x - rect.start_x + 1) * (rect.end_y - rect.start_y + 1);
         let area = area as usize;
 
         for _ in 0..area {
@@ -157,6 +158,18 @@ impl<'a> Lcd<'a> {
         }
 
         self.flush_buf();
+    }
+
+    pub fn clear(&mut self, color: u16) {
+        self.draw(
+            Rect {
+                start_x: 0,
+                end_x: 239,
+                start_y: 0,
+                end_y: 239,
+            },
+            color,
+        );
     }
 
     fn rst(&mut self, level: Level) {

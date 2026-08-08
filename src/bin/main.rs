@@ -83,26 +83,26 @@ async fn main(spawner: Spawner) -> ! {
     loop {
         info!("Hello world!");
         Timer::after(Duration::from_secs(1)).await;
-        lcd.draw(
-            Rect {
-                start_x: 0,
-                start_y: 0,
-                end_x: 100,
-                end_y: 100,
-            },
-            0xFFFF,
-        );
+        // lcd.draw(
+        //     Rect {
+        //         start_x: 0,
+        //         start_y: 0,
+        //         end_x: 100,
+        //         end_y: 100,
+        //     },
+        //     0xFFFF,
+        // );
         led.set_high();
         Timer::after(Duration::from_secs(1)).await;
-        lcd.draw(
-            Rect {
-                start_x: 0,
-                start_y: 0,
-                end_x: 100,
-                end_y: 100,
-            },
-            0x0000,
-        );
+        // lcd.draw(
+        //     Rect {
+        //         start_x: 0,
+        //         start_y: 0,
+        //         end_x: 100,
+        //         end_y: 100,
+        //     },
+        //     0x0000,
+        // );
         led.set_low();
     }
 
