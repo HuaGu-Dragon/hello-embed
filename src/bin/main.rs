@@ -15,7 +15,7 @@ use esp_hal::clock::CpuClock;
 use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::timer::timg::TimerGroup;
 use esp_radio::ble::controller::BleConnector;
-use hello_embed::lcd::{Lcd, Rect};
+use hello_embed::lcd::Lcd;
 use panic_rtt_target as _;
 use trouble_host::prelude::*;
 
@@ -68,7 +68,7 @@ async fn main(spawner: Spawner) -> ! {
     // TODO: Spawn some tasks
     let _ = spawner;
 
-    let mut lcd = Lcd::init_spi2(
+    let _lcd = Lcd::init_spi2(
         peripherals.SPI2,
         peripherals.GPIO11,
         peripherals.GPIO12,

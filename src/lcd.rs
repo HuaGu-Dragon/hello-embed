@@ -1,18 +1,20 @@
 use embassy_time::{Duration, Timer};
 use esp_hal::{
-    Blocking,
-    gpio::{Level, Output},
-    peripherals::{GPIO11, GPIO12, GPIO13, GPIO21, GPIO40, GPIO47, GPIO48, SPI2},
-    spi::master::{Config, Spi},
+    Async, Blocking, DriverMode,
+    gpio::{
+        Level, Output, OutputPin,
+        interconnect::{PeripheralInput, PeripheralOutput},
+    },
+    spi::master::{Config, Instance, Spi},
 };
 
 extern crate alloc;
 
-pub struct Lcd<'a> {
-    spi: Spi<'a, Blocking>,
-    rst: Output<'static>,
-    blk: Output<'static>,
-    dc: Output<'static>,
+pub struct Lcd<'a, D: DriverMode> {
+    spi: Spi<'a, D>,
+    rst: Output<'a>,
+    blk: Output<'a>,
+    dc: Output<'a>,
     // cs: Output<'static>,
     buf: alloc::vec::Vec<u8>,
 }
@@ -24,23 +26,25 @@ pub struct Rect {
     pub end_y: u16,
 }
 
-impl<'a> Lcd<'a> {
+impl<'a> Lcd<'a, Async> {
+    #[allow(clippy::too_many_arguments)]
     pub async fn init_spi2(
-        spi2: SPI2<'static>,
-        mosi: GPIO11<'static>,
-        sck: GPIO12<'static>,
-        miso: GPIO13<'static>,
-        gpio21: GPIO21<'static>,
-        gpio40: GPIO40<'static>,
-        gpio47: GPIO47<'static>,
-        cs: GPIO48<'static>,
+        spi2: impl Instance + 'a,
+        mosi: impl PeripheralOutput<'a>,
+        sck: impl PeripheralOutput<'a>,
+        miso: impl PeripheralInput<'a>,
+        gpio21: impl OutputPin + 'a,
+        gpio40: impl OutputPin + 'a,
+        gpio47: impl OutputPin + 'a,
+        cs: impl PeripheralOutput<'a>,
     ) -> Self {
         let spi = Spi::new(spi2, Config::default())
             .unwrap()
             .with_cs(cs)
             .with_miso(miso)
             .with_mosi(mosi)
-            .with_sck(sck);
+            .with_sck(sck)
+            .into_async();
 
         let rst = Output::new(gpio21, Level::High, Default::default());
         let blk = Output::new(gpio40, Level::High, Default::default());
@@ -122,6 +126,23 @@ impl<'a> Lcd<'a> {
         lcd
     }
 
+    pub fn into_blocking(self) -> Lcd<'a, Blocking> {
+        let spi = self.spi.into_blocking();
+
+        Lcd {
+            spi,
+            rst: self.rst,
+            blk: self.blk,
+            dc: self.dc,
+            buf: self.buf,
+        }
+    }
+}
+
+impl<'a, D> Lcd<'a, D>
+where
+    D: DriverMode,
+{
     pub fn write_cmd(&mut self, cmd: &[u8]) {
         self.dc(Level::Low);
         self.spi.write(cmd).unwrap();
