@@ -2,7 +2,7 @@ use embassy_time::{Duration, Timer};
 use esp_hal::{
     Async, Blocking, DriverMode,
     gpio::{
-        Level, Output, OutputPin,
+        Level, Output, OutputConfig, OutputPin,
         interconnect::{PeripheralInput, PeripheralOutput},
     },
     spi::master::{Config, Instance, Spi},
@@ -33,9 +33,9 @@ impl<'a> Lcd<'a, Async> {
         mosi: impl PeripheralOutput<'a>,
         sck: impl PeripheralOutput<'a>,
         miso: impl PeripheralInput<'a>,
-        gpio21: impl OutputPin + 'a,
-        gpio40: impl OutputPin + 'a,
-        gpio47: impl OutputPin + 'a,
+        rst: impl OutputPin + 'a,
+        blk: impl OutputPin + 'a,
+        dc: impl OutputPin + 'a,
         cs: impl PeripheralOutput<'a>,
     ) -> Self {
         let spi = Spi::new(spi2, Config::default())
@@ -46,9 +46,9 @@ impl<'a> Lcd<'a, Async> {
             .with_sck(sck)
             .into_async();
 
-        let rst = Output::new(gpio21, Level::High, Default::default());
-        let blk = Output::new(gpio40, Level::High, Default::default());
-        let dc = Output::new(gpio47, Level::Low, Default::default());
+        let rst = Output::new(rst, Level::High, OutputConfig::default());
+        let blk = Output::new(blk, Level::High, OutputConfig::default());
+        let dc = Output::new(dc, Level::Low, OutputConfig::default());
         // let mut gpio48 = Output::new(gpio48, Level::High, Default::default());
 
         let mut lcd = Self {
