@@ -13,6 +13,11 @@ use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio::{Level, Output, OutputConfig};
+use esp_hal::ledc::timer::config::Duty;
+use esp_hal::mcpwm::operator::PwmPinConfig;
+use esp_hal::mcpwm::timer::PwmWorkingMode;
+use esp_hal::mcpwm::{McPwm, PeripheralClockConfig};
+use esp_hal::time::Rate;
 use esp_hal::timer::timg::TimerGroup;
 use esp_radio::ble::controller::BleConnector;
 use hello_embed::lcd::Lcd;
@@ -42,7 +47,35 @@ async fn main(spawner: Spawner) -> ! {
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
 
-    let mut led = Output::new(peripherals.GPIO38, Level::Low, OutputConfig::default());
+    // let mut ledc = esp_hal::ledc::Ledc::new(peripherals.LEDC);
+    // ledc.set_global_slow_clock(esp_hal::ledc::LSGlobalClkSource::APBClk);
+    // let mut motor_timer =
+    //     ledc.timer::<esp_hal::ledc::LowSpeed>(esp_hal::ledc::timer::Number::Timer1);
+    // let mut motor = Motor::new(
+    //     peripherals.LEDC,
+    //     Duty::Duty12Bit,
+    //     Rate::from_hz(50),
+    //     50,
+    //     peripherals.GPIO38,
+    // );
+    // let mut led = Output::new(peripherals.GPIO38, Level::Low, OutputConfig::default());
+
+    let clock_cfg = PeripheralClockConfig::with_frequency(Rate::from_mhz(40)).unwrap();
+    let mut mcpwm = McPwm::new(peripherals.MCPWM0, clock_cfg);
+
+    // connect operator0 to timer0
+    mcpwm.operator0.set_timer(&mcpwm.timer0);
+    // connect operator0 to pin
+    let mut pwm_pin = mcpwm
+        .operator0
+        .with_pin_a(peripherals.GPIO38, PwmPinConfig::UP_ACTIVE_HIGH);
+
+    // start timer with timestamp values in the range of 0..=99 and a frequency
+    // of 20 kHz
+    let timer_clock_cfg = clock_cfg
+        .timer_clock_with_frequency(99, PwmWorkingMode::Increase, Rate::from_khz(20))
+        .unwrap();
+    mcpwm.timer0.start(timer_clock_cfg);
 
     esp_alloc::heap_allocator!(#[esp_hal::ram(reclaimed)] size: 73744);
     // COEX needs more RAM - so we've added some more
@@ -81,8 +114,20 @@ async fn main(spawner: Spawner) -> ! {
     .await;
 
     loop {
-        info!("Hello world!");
-        Timer::after(Duration::from_secs(1)).await;
+        for timestamp in 0..=100 {
+            pwm_pin.set_timestamp(timestamp);
+            Timer::after(Duration::from_millis(20)).await;
+        }
+        for timestamp in 0..=100 {
+            pwm_pin.set_timestamp(100 - timestamp);
+            Timer::after(Duration::from_millis(20)).await;
+        }
+        // channel.start_duty_fade(1, 12, 1000).unwrap();
+        // while channel.is_duty_fade_running() {}
+        // channel.start_duty_fade(12, 1, 1000).unwrap();
+        // while channel.is_duty_fade_running() {}
+        // info!("Hello world!");
+        // Timer::after(Duration::from_secs(1)).await;
         // lcd.draw(
         //     Rect {
         //         start_x: 0,
@@ -92,8 +137,8 @@ async fn main(spawner: Spawner) -> ! {
         //     },
         //     0xFFFF,
         // );
-        led.set_high();
-        Timer::after(Duration::from_secs(1)).await;
+        // led.set_high();
+        // Timer::after(Duration::from_secs(1)).await;
         // lcd.draw(
         //     Rect {
         //         start_x: 0,
@@ -103,7 +148,7 @@ async fn main(spawner: Spawner) -> ! {
         //     },
         //     0x0000,
         // );
-        led.set_low();
+        // led.set_low();
     }
 
     // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.1.0/examples
