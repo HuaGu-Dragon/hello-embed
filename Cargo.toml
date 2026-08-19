@@ -17,6 +17,7 @@ name    = "hello_test"
 test = false
 
 [dependencies]
+mini-renderer = { git = "https://github.com/HuaGu-Dragon/mini-renderer.git", default-features = false, features = ["derive", "glam", "libm"] }
 esp-hal = { version = "~1.1.0", features = ["defmt", "esp32s3", "unstable"] }
 
 esp-rtos = { version = "0.3.0", features = [
@@ -72,6 +73,7 @@ trouble-host = { version = "0.6.0", features = ["gatt"] }
 
 critical-section = "1.2.0"
 static_cell      = "2.1.1"
+libm = "0.2.16"
 
 [dev-dependencies]
 embedded-test = { version = "0.7.1", features = [
