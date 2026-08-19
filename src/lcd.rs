@@ -6,6 +6,7 @@ use esp_hal::{
         interconnect::{PeripheralInput, PeripheralOutput},
     },
     spi::master::{Config, Instance, Spi},
+    time::Rate,
 };
 
 extern crate alloc;
@@ -16,7 +17,7 @@ pub struct Lcd<'a, D: DriverMode> {
     blk: Output<'a>,
     dc: Output<'a>,
     // cs: Output<'static>,
-    buf: alloc::vec::Vec<u8>,
+    // buf: alloc::vec::Vec<u8>,
 }
 
 pub struct Rect {
@@ -38,7 +39,7 @@ impl<'a> Lcd<'a, Async> {
         dc: impl OutputPin + 'a,
         cs: impl PeripheralOutput<'a>,
     ) -> Self {
-        let spi = Spi::new(spi2, Config::default())
+        let spi = Spi::new(spi2, Config::default().with_frequency(Rate::from_mhz(50)))
             .unwrap()
             .with_cs(cs)
             .with_miso(miso)
@@ -57,7 +58,7 @@ impl<'a> Lcd<'a, Async> {
             blk,
             dc,
             // cs: gpio48,
-            buf: alloc::vec::Vec::with_capacity(240 * 240 * 2),
+            // buf: alloc::vec::Vec::with_capacity(240 * 240 * 2),
         };
 
         lcd.rst(Level::Low);
@@ -121,7 +122,7 @@ impl<'a> Lcd<'a, Async> {
         ]);
 
         lcd.write_cmd(&[0x21, 0x29, 0x2C]);
-        lcd.clear(0x0000);
+        // lcd.clear(0xffff);
 
         lcd
     }
@@ -134,7 +135,7 @@ impl<'a> Lcd<'a, Async> {
             rst: self.rst,
             blk: self.blk,
             dc: self.dc,
-            buf: self.buf,
+            // buf: self.buf,
         }
     }
 }
@@ -148,11 +149,11 @@ where
         self.spi.write(cmd).unwrap();
     }
 
-    fn flush_buf(&mut self) {
-        self.dc(Level::High);
-        self.spi.write(&self.buf).unwrap();
-        self.buf.clear();
-    }
+    // fn flush_buf(&mut self) {
+    //     self.dc(Level::High);
+    //     self.spi.write(&self.buf).unwrap();
+    //     self.buf.clear();
+    // }
 
     pub fn write_data(&mut self, data: &[u8]) {
         self.dc(Level::High);
@@ -175,10 +176,34 @@ where
         let area = area as usize;
 
         for _ in 0..area {
-            self.buf.extend_from_slice(data.as_slice());
+            self.write_data(&data);
+            // self.buf.extend_from_slice(data.as_slice());
         }
 
-        self.flush_buf();
+        // self.flush_buf();
+    }
+
+    pub fn draw_buf(&mut self, rect: Rect, buf: &[u16]) {
+        self.write_cmd(&[0x2a]);
+        let start_x = rect.start_x.to_be_bytes();
+        let end_x = rect.end_x.to_be_bytes();
+        self.write_data(&[start_x[0], start_x[1], end_x[0], end_x[1]]);
+        self.write_cmd(&[0x2b]);
+        let start_y = rect.start_y.to_be_bytes();
+        let end_y = rect.end_y.to_be_bytes();
+        self.write_data(&[start_y[0], start_y[1], end_y[0], end_y[1]]);
+        self.write_cmd(&[0x2c]);
+
+        let area = (rect.end_x - rect.start_x + 1) * (rect.end_y - rect.start_y + 1);
+        let area = area as usize;
+
+        for i in 0..area {
+            let data = buf[i].to_be_bytes();
+            self.write_data(&data);
+            // self.buf.extend_from_slice(data.as_slice());
+        }
+
+        // self.flush_buf();
     }
 
     pub fn clear(&mut self, color: u16) {
