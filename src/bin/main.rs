@@ -104,41 +104,6 @@ async fn main(spawner: Spawner) -> ! {
     loop {
         hello_embed::renderer::render(&mut lcd, time.elapsed().as_ticks() as f32 / TICK_HZ as f32)
             .await;
-        // for timestamp in 0..=100 {
-        //     pwm_pin.set_timestamp(timestamp);
-        //     Timer::after(Duration::from_millis(20)).await;
-        // }
-        // for timestamp in 0..=100 {
-        //     pwm_pin.set_timestamp(100 - timestamp);
-        //     Timer::after(Duration::from_millis(20)).await;
-        // }
-        // channel.start_duty_fade(1, 12, 1000).unwrap();
-        // while channel.is_duty_fade_running() {}
-        // channel.start_duty_fade(12, 1, 1000).unwrap();
-        // while channel.is_duty_fade_running() {}
-        // info!("Hello world!");
-        // Timer::after(Duration::from_secs(1)).await;
-        // lcd.draw(
-        //     Rect {
-        //         start_x: 0,
-        //         start_y: 0,
-        //         end_x: 100,
-        //         end_y: 100,
-        //     },
-        //     0xFFFF,
-        // );
-        // led.set_high();
-        // Timer::after(Duration::from_secs(1)).await;
-        // lcd.draw(
-        //     Rect {
-        //         start_x: 0,
-        //         start_y: 0,
-        //         end_x: 100,
-        //         end_y: 100,
-        //     },
-        //     0x0000,
-        // );
-        // led.set_low();
     }
 
     // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.1.0/examples
