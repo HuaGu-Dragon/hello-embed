@@ -83,8 +83,7 @@ pub async fn render<D: DriverMode>(lcd: &mut Lcd<'_, D>, timer: f32) {
     let mut pipeline = create_render_pipeline(
         MyVertexShader,
         MyFragmentShader,
-        PrimitiveState::new(PrimitiveTopology::triangle_list()).with_cull_mode(Face::Back),
-        // PrimitiveState::default().with_cull_mode(Face::Back),
+        PrimitiveState::default().with_cull_mode(Face::Back),
     );
 
     renderer
